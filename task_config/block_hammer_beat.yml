@@ -23,5 +23,5 @@ data_type:
   pointcloud: true
   endpose: true
   qpos: true
-  mesh_segmentation: false
-  actor_segmentation: false
+  mesh_segmentation: true
+  actor_segmentation: true

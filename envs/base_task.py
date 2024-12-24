@@ -715,7 +715,7 @@ class Base_task(gym.Env):
             label0_image = seg_labels[..., 0].astype(np.uint8) # mesh-level
         elif level == "actor":
             label0_image = seg_labels[..., 1].astype(np.uint8) # actor-level
-        return color_palette[label0_image]
+        return label0_image, color_palette[label0_image]
     
     # Get Camera Depth
     def _get_camera_depth(self, camera):
@@ -992,16 +992,16 @@ class Base_task(gym.Env):
         # # mesh_segmentation
         # # ---------------------------------------------------------------------------- # 
         if self.data_type.get('mesh_segmentation', False):
-            head_seg = self._get_camera_segmentation(self.head_camera,level="mesh")
-            left_seg = self._get_camera_segmentation(self.left_camera,level="mesh")
-            right_seg = self._get_camera_segmentation(self.right_camera,level="mesh")
-            front_seg = self._get_camera_segmentation(self.front_camera,level="mesh")
+            head_seg, head_seg_color = self._get_camera_segmentation(self.head_camera,level="mesh")
+            left_seg, left_seg_color = self._get_camera_segmentation(self.left_camera,level="mesh")
+            right_seg, right_seg_color = self._get_camera_segmentation(self.right_camera,level="mesh")
+            front_seg, head_seg_color = self._get_camera_segmentation(self.front_camera,level="mesh")
 
             if self.save_type.get('raw_data', True):
-                save_img(self.file_path["t_seg_mesh"]+f"{self.PCD_INDEX}.png", head_seg)
-                save_img(self.file_path["l_seg_mesh"]+f"{self.PCD_INDEX}.png", left_seg)
-                save_img(self.file_path["r_seg_mesh"]+f"{self.PCD_INDEX}.png", right_seg)
-                save_img(self.file_path["f_seg_mesh"]+f"{self.PCD_INDEX}.png", front_seg)
+                save_img(self.file_path["t_seg_mesh"]+f"{self.PCD_INDEX}.png", head_seg_color)
+                save_img(self.file_path["l_seg_mesh"]+f"{self.PCD_INDEX}.png", left_seg_color)
+                save_img(self.file_path["r_seg_mesh"]+f"{self.PCD_INDEX}.png", right_seg_color)
+                save_img(self.file_path["f_seg_mesh"]+f"{self.PCD_INDEX}.png", front_seg_color)
 
             if self.save_type.get('pkl' , True):
                 pkl_dic["observation"]["head_camera"]["mesh_segmentation"] = head_seg
@@ -1012,16 +1012,16 @@ class Base_task(gym.Env):
         # # actor_segmentation
         # # --------------------------------------------------------------------------- # 
         if self.data_type.get('actor_segmentation', False):
-            head_seg = self._get_camera_segmentation(self.head_camera,level="actor")
-            left_seg = self._get_camera_segmentation(self.left_camera,level="actor")
-            right_seg = self._get_camera_segmentation(self.right_camera,level="actor")
-            front_seg = self._get_camera_segmentation(self.front_camera,level="actor")
+            head_seg, head_seg_color = self._get_camera_segmentation(self.head_camera,level="actor")
+            left_seg, left_seg_color = self._get_camera_segmentation(self.left_camera,level="actor")
+            right_seg, right_seg_color = self._get_camera_segmentation(self.right_camera,level="actor")
+            front_seg, front_seg_color = self._get_camera_segmentation(self.front_camera,level="actor")
 
             if self.save_type.get('raw_data', True):
-                save_img(self.file_path["t_seg_actor"]+f"{self.PCD_INDEX}.png", head_seg)
-                save_img(self.file_path["l_seg_actor"]+f"{self.PCD_INDEX}.png", left_seg)
-                save_img(self.file_path["r_seg_actor"]+f"{self.PCD_INDEX}.png", right_seg)
-                save_img(self.file_path["f_seg_actor"]+f"{self.PCD_INDEX}.png", front_seg)
+                save_img(self.file_path["t_seg_actor"]+f"{self.PCD_INDEX}.png", head_seg_color)
+                save_img(self.file_path["l_seg_actor"]+f"{self.PCD_INDEX}.png", left_seg_color)
+                save_img(self.file_path["r_seg_actor"]+f"{self.PCD_INDEX}.png", right_seg_color)
+                save_img(self.file_path["f_seg_actor"]+f"{self.PCD_INDEX}.png", front_seg_color)
             if self.save_type.get('pkl' , True):
                 pkl_dic["observation"]["head_camera"]["actor_segmentation"] = head_seg
                 pkl_dic["observation"]["left_camera"]["actor_segmentation"] = left_seg
