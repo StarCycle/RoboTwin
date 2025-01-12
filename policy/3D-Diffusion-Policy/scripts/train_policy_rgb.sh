@@ -25,8 +25,8 @@ echo -e "\033[33mgpu id (to use): ${gpu_id}\033[0m"
 
 
 if [ $DEBUG = True ]; then
-    wandb_mode=offline
-    # wandb_mode=online
+    # wandb_mode=offline
+    wandb_mode=online
     echo -e "\033[33mDebug mode!\033[0m"
     echo -e "\033[33mDebug mode!\033[0m"
     echo -e "\033[33mDebug mode!\033[0m"
@@ -49,6 +49,7 @@ python train.py --config-name=${config_name}.yaml \
                             exp_name=${exp_name} \
                             logging.mode=${wandb_mode} \
                             checkpoint.save_ckpt=${save_ckpt} \
+                            training.checkpoint_every=500 \
                             expert_data_num=${expert_data_num} \
                             head_camera_type=${head_camera_type} \
                             policy.use_pc_color=True 

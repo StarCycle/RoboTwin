@@ -725,7 +725,7 @@ class Base_task(gym.Env):
         return depth_image
     
     # Get Camera PointCloud
-    def _get_camera_pcd(self, camera, point_num = 0):
+    def _get_camera_pcd(self, camera, point_num = 0, seg = None):
         rgba = camera.get_picture_cuda("Color").torch() # [H, W, 4]
         position = camera.get_picture_cuda("Position").torch()
         model_matrix = camera.get_model_matrix()
@@ -744,6 +744,13 @@ class Base_task(gym.Env):
         points_color = torch.clamp(points_color, 0, 1)
 
         points_world = points_world.squeeze(0)
+
+        # If remove robot points
+        if seg is not None:
+            robot_mask_ids = np.arange(7, 65)
+            robot_mask = np.isin(seg, robot_mask_ids)
+            points_world = points_world[~robot_mask.flatten()]
+            points_color = points_color[~robot_mask.flatten()]
         
         # If crop is needed
         if self.pcd_crop:
@@ -1098,10 +1105,16 @@ class Base_task(gym.Env):
         # # PointCloud
         # # ---------------------------------------------------------------------------- #
         if self.data_type.get('pointcloud', False):
-            head_pcd = self._get_camera_pcd(self.head_camera, point_num=0)
-            front_pcd = self._get_camera_pcd(self.front_camera, point_num=0)
-            left_pcd = self._get_camera_pcd(self.left_camera, point_num=0)
-            right_pcd = self._get_camera_pcd(self.right_camera, point_num=0) 
+            if self.data_type.get('remove_robot', False) and self.data_type.get('actor_segmentation', False):
+                head_pcd = self._get_camera_pcd(self.head_camera, point_num=0, seg=head_seg)
+                left_pcd = self._get_camera_pcd(self.left_camera, point_num=0, seg=left_seg)
+                right_pcd = self._get_camera_pcd(self.right_camera, point_num=0, seg=right_seg)
+                front_pcd = self._get_camera_pcd(self.front_camera, point_num=0, seg=front_seg)
+            else:
+                head_pcd = self._get_camera_pcd(self.head_camera, point_num=0)
+                front_pcd = self._get_camera_pcd(self.front_camera, point_num=0)
+                left_pcd = self._get_camera_pcd(self.left_camera, point_num=0)
+                right_pcd = self._get_camera_pcd(self.right_camera, point_num=0) 
 
             # Merge pointcloud
             if self.data_type.get("conbine", False):
@@ -1155,10 +1168,22 @@ class Base_task(gym.Env):
         self.head_camera.take_picture()
         self.front_camera.take_picture()
 
-        head_pcd = self._get_camera_pcd(self.head_camera, point_num=0)
-        left_pcd = self._get_camera_pcd(self.left_camera, point_num=0)
-        right_pcd = self._get_camera_pcd(self.right_camera, point_num=0)
-        front_pcd = self._get_camera_pcd(self.front_camera, point_num=0)
+        head_seg, head_seg_color = self._get_camera_segmentation(self.head_camera,level="actor")
+        left_seg, left_seg_color = self._get_camera_segmentation(self.left_camera,level="actor")
+        right_seg, right_seg_color = self._get_camera_segmentation(self.right_camera,level="actor")
+        front_seg, front_seg_color = self._get_camera_segmentation(self.front_camera,level="actor")
+
+        if self.data_type.get('remove_robot', False) and self.data_type.get('actor_segmentation', False):
+            head_pcd = self._get_camera_pcd(self.head_camera, point_num=0, seg=head_seg)
+            left_pcd = self._get_camera_pcd(self.left_camera, point_num=0, seg=left_seg)
+            right_pcd = self._get_camera_pcd(self.right_camera, point_num=0, seg=right_seg)
+            front_pcd = self._get_camera_pcd(self.front_camera, point_num=0, seg=front_seg)
+        else:
+            head_pcd = self._get_camera_pcd(self.head_camera, point_num=0)
+            left_pcd = self._get_camera_pcd(self.left_camera, point_num=0)
+            right_pcd = self._get_camera_pcd(self.right_camera, point_num=0)
+            front_pcd = self._get_camera_pcd(self.front_camera, point_num=0)
+
         head_rgba = self._get_camera_rgba(self.head_camera)
         left_rgba = self._get_camera_rgba(self.left_camera)
         right_rgba = self._get_camera_rgba(self.right_camera)
