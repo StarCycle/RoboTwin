@@ -742,23 +742,24 @@ class Base_task(gym.Env):
 
         # Format color data.
         points_color = torch.clamp(points_color, 0, 1)
-
         points_world = points_world.squeeze(0)
+        mask = np.ones(points_world.shape[0], dtype=bool)
 
         # If remove robot points
         if seg is not None:
             robot_mask_ids = np.arange(7, 65)
             robot_mask = np.isin(seg, robot_mask_ids)
-            points_world = points_world[~robot_mask.flatten()]
-            points_color = points_color[~robot_mask.flatten()]
+            mask &= ~robot_mask.flatten()
         
         # If crop is needed
         if self.pcd_crop:
             min_bound = torch.tensor(self.pcd_crop_bbox[0], dtype=torch.float32).to(device)
             max_bound = torch.tensor(self.pcd_crop_bbox[1], dtype=torch.float32).to(device)
             inside_bounds_mask = (points_world.squeeze(0) >= min_bound).all(dim=1) & (points_world.squeeze(0)  <= max_bound).all(dim=1)
-            points_world = points_world[inside_bounds_mask]
-            points_color = points_color[inside_bounds_mask]
+            mask &= inside_bounds_mask.cpu().numpy()
+
+        points_world = points_world[mask]
+        points_color = points_color[mask]
         
         # Convert the tensor back to a NumPy array for use with Open3D.
         points_world_np = points_world.cpu().numpy()
