@@ -1523,6 +1523,7 @@ class Base_task(gym.Env):
                 assert obs['agent_pos'].shape[0] == 7, 'agent_pose shape, error'
             
             actions = model.get_action(obs)
+
             left_arm_actions , left_gripper , left_current_qpos, left_path = [], [], [], []
             right_arm_actions , right_gripper , right_current_qpos, right_path = [], [], [], []
             if self.dual_arm:
@@ -1716,6 +1717,127 @@ class Base_task(gym.Env):
     def pre_move(self):
         pass
 
+    # ================= For Your Policy Deployment =================
+    def apply_florence(self, model):
+        step_cnt = 0
+        self.test_num += 1
+        success_flag = False
+        self._update_render()
+        if self.render_freq:
+            self.viewer.render()
+        self.actor_pose = True
+
+        while step_cnt < self.step_lim: # If it is not successful within the specified number of steps, it is judged as a failure.
+            obs = self.get_obs() # get observation
+            
+            actions = model.get_action(obs) # TODO, get actions according to your policy and current obs
+
+            left_arm_actions , left_gripper , left_current_qpos, left_path = [], [], [], []
+            right_arm_actions , right_gripper , right_current_qpos, right_path = [], [], [], []
+
+            left_arm_actions, left_gripper = actions[:, :6], actions[:, 6] # 0-5 left joint action, 6 left gripper action
+            right_arm_actions, right_gripper = actions[:, 7:13], actions[:, 13] # 7-12 right joint action, 13 right gripper action
+            left_current_qpos, right_current_qpos = obs['joint_action'][:6], obs['joint_action'][7:13]  # current joint and gripper action
+            
+
+            left_path = np.vstack((left_current_qpos, left_arm_actions))
+            right_path = np.vstack((right_current_qpos, right_arm_actions))
+            topp_left_flag, topp_right_flag = True, True
+            try:
+                times, left_pos, left_vel, acc, duration = self.left_planner.TOPP(left_path, 1/250, verbose=True)
+                left_result = dict()
+                left_result['position'], left_result['velocity'] = left_pos, left_vel
+                left_n_step = left_result["position"].shape[0]
+                left_gripper = np.linspace(left_gripper[0], left_gripper[-1], left_n_step)
+            except:
+                topp_left_flag = False
+                left_n_step = 1
+
+            try:
+                times, right_pos, right_vel, acc, duration = self.right_planner.TOPP(right_path, 1/250, verbose=True)            
+                right_result = dict()
+                right_result['position'], right_result['velocity'] = right_pos, right_vel
+                right_n_step = right_result["position"].shape[0]
+                right_gripper = np.linspace(right_gripper[0], right_gripper[-1], right_n_step)
+            except:
+                topp_right_flag = False
+                right_n_step = 1
+            
+            if right_n_step == 0:
+                topp_right_flag = False
+                right_n_step = 1
+            
+            step_cnt += actions.shape[0]
+            
+            n_step = max(left_n_step, right_n_step)
+
+            obs_update_freq = n_step // actions.shape[0]
+
+            now_left_id = 0 if topp_left_flag else 1e9
+            now_right_id = 0 if topp_right_flag else 1e9
+            i = 0
+            
+            while now_left_id < left_n_step or now_right_id < right_n_step:
+                qf = self.robot.compute_passive_force(
+                    gravity=True, coriolis_and_centrifugal=True
+                )
+                self.robot.set_qf(qf)
+                if topp_left_flag and now_left_id < left_n_step and now_left_id / left_n_step <= now_right_id / right_n_step:
+                    for j in range(len(self.left_arm_joint_id)):
+                        left_j = self.left_arm_joint_id[j]
+                        self.active_joints[left_j].set_drive_target(left_result["position"][now_left_id][j])
+                        self.active_joints[left_j].set_drive_velocity_target(left_result["velocity"][now_left_id][j])
+                    if not self.fix_gripper:
+                        for joint in self.active_joints[34:36]:
+                            joint.set_drive_target(left_gripper[now_left_id])
+                            joint.set_drive_velocity_target(0.05)
+                            self.left_gripper_val = left_gripper[now_left_id]
+
+                    now_left_id +=1
+                    
+                if topp_right_flag and now_right_id < right_n_step and now_right_id / right_n_step <= now_left_id / left_n_step:
+                    for j in range(len(self.right_arm_joint_id)):
+                        right_j = self.right_arm_joint_id[j]
+                        self.active_joints[right_j].set_drive_target(right_result["position"][now_right_id][j])
+                        self.active_joints[right_j].set_drive_velocity_target(right_result["velocity"][now_right_id][j])
+                    if not self.fix_gripper:
+                        for joint in self.active_joints[36:38]:
+                            joint.set_drive_target(right_gripper[now_right_id])
+                            joint.set_drive_velocity_target(0.05)
+                            self.right_gripper_val = right_gripper[now_right_id]
+
+                    now_right_id +=1
+                
+                self.scene.step()
+                self._update_render()
+
+                if i % 5==0:
+                    self._update_render()
+                    if self.render_freq and i % self.render_freq == 0:
+                        self.viewer.render()
+                
+                i += 1
+                if self.check_success():
+                    success_flag = True
+                    break
+
+                if self.actor_pose == False:
+                    break
+            
+            self. _update_render()
+            if self.render_freq:
+                self.viewer.render()
+            
+            print(f'step: {step_cnt} / {self.step_lim}', end='\r')
+
+            if success_flag:
+                print("\nsuccess!")
+                self.suc +=1
+                return
+            
+            if self.actor_pose == False:
+                break
+        print("\nfail!")
     # ================= For Your Policy Deployment =================
     def apply_policy_demo(self, model):
         step_cnt = 0

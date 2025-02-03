@@ -1,0 +1,4 @@
+[submodule "policy/mimictest"]
+	path = policy/mimictest
+	url = https://github.com/StarCycle/mimictest
+	branch = RoboTwin

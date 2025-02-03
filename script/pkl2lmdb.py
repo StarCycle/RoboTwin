@@ -50,7 +50,7 @@ if __name__ == '__main__':
     max_steps = []
     split_id = -1
 
-    for ep_id in tqdm(range(1), desc='saving episode'): # TODO
+    for ep_id in tqdm(range(num_episodes), desc='saving episode'):
         ep_path = pkl_path / f'episode{ep_id}'
         if ep_id % single_file_episode_num == 0:
             split_id += 1

@@ -80,7 +80,7 @@ class TrainDP3Workspace:
     def run(self):
         cfg = copy.deepcopy(self.cfg)
 
-        WANDB = True
+        WANDB = False
         
         if cfg.training.debug:
             cfg.training.num_epochs = 100
