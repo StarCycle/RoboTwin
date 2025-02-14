@@ -87,12 +87,12 @@ def main(usr_args):
     from mimictest.Datasets.RoboTwinLMDBDataset import RoboTwinLMDBDataset
     from mimictest.Wrappers.DiffusionPolicy import DiffusionPolicy
     from mimictest.Simulation.SequentialRoboTwin import RoboTwinPolicy
-    from mimictest.Nets.FlorencePi0Net import FlorencePi0Net
+    from mimictest.Nets.Florence3DPi0Net import Florence3DPi0Net
 
     # Saving path
-    save_path = Path('/root/autodl-tmp/RoboTwin/policy/mimictest/mimictest/Scripts/RoboTwinExperiments/Save')
+    save_path = Path('/root/autodl-tmp/RoboTwin/policy/mimictest/mimictest/Scripts/RoboTwinExperiments/Save_3d')
     save_path.mkdir(parents=True, exist_ok=True)
-    load_batch_id = 29000
+    load_batch_id = 38000
 
     # Dataset
     folder_name = 'lmdb_ds'
@@ -106,10 +106,10 @@ def main(usr_args):
     process_configs = {
         'rgb': {
             'rgb_shape': (320, 320), # Initial resolution is (180, 320)
-            'crop_shape': (280, 280),
             'max': torch.tensor(1.0),
             'min': torch.tensor(0.0),
         },
+        'coord': {},
         'low_dim': {
             'max': None, # to be filled
             'min': None,
@@ -168,7 +168,7 @@ def main(usr_args):
         process_configs=process_configs,
         device=device,
     )
-    net = FlorencePi0Net(
+    net = Florence3DPi0Net(
         path=model_path,
         freeze_vision_tower=freeze_vision_tower,
         num_actions=num_actions,
@@ -196,7 +196,7 @@ def main(usr_args):
         policy.ema_net.eval()
     else:
         policy.net.eval()
-    policy = RoboTwinPolicy(policy, preprocessor, obs_horizon, chunk_size, save_path, record_video=True)
+    policy = RoboTwinPolicy(policy, preprocessor, obs_horizon, chunk_size, save_path, record_video=False)
 
     st_seed, suc_num = test_policy(task, args, policy, st_seed, test_num=test_num)
 
