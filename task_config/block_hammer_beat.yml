@@ -11,7 +11,7 @@ wrist_camera_type: D435
 front_camera_type: D435
 pcd_crop: true
 pcd_down_sample_num: 1024
-episode_num: 200
+episode_num: 50
 save_freq: 15
 save_type:
   raw_data: false
@@ -20,10 +20,10 @@ data_type:
   rgb: true
   observer: false
   depth: true
-  pointcloud: true
+  pointcloud: false
   endpose: true
   qpos: true
   mesh_segmentation: false
   actor_segmentation: true
-  conbine: true
-  remove_robot: true
+  conbine: false
+  remove_robot: false

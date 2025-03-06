@@ -90,13 +90,13 @@ def main(usr_args):
     from mimictest.Nets.Florence3DPi0Net import Florence3DPi0Net
 
     # Saving path
-    save_path = Path('/root/autodl-tmp/RoboTwin/policy/mimictest/mimictest/Scripts/RoboTwinExperiments/Save_3d')
+    save_path = Path('/home/lizhuoheng/RoboTwin/policy/mimictest/mimictest/Scripts/RoboTwinExperiments/Save') 
     save_path.mkdir(parents=True, exist_ok=True)
-    load_batch_id = 38000
+    load_batch_id = 23000
 
     # Dataset
-    folder_name = 'lmdb_ds'
-    dataset_path = Path('/root/autodl-tmp/RoboTwin/data') / folder_name
+    folder_name = 'lmdb_blockhammerbeat_50ep'
+    dataset_path = Path('/home/lizhuoheng/RoboTwin/data') / folder_name
 
     # Space
     num_actions = 14
@@ -106,10 +106,16 @@ def main(usr_args):
     process_configs = {
         'rgb': {
             'rgb_shape': (320, 320), # Initial resolution is (180, 320)
+            'crop_shape': (280, 280), # TODO: Debug
             'max': torch.tensor(1.0),
             'min': torch.tensor(0.0),
         },
-        'coord': {},
+        'coord': {
+            'rgb_shape': (320, 320), 
+            'crop_shape': (280, 280), # TODO: Debug
+            'max': torch.tensor([0.8958, 0.4029, 1.2061]).view(3, 1, 1),
+            'min': torch.tensor([-0.6189, -0.3736,  0.3634]).view(3, 1, 1),
+        },
         'low_dim': {
             'max': None, # to be filled
             'min': None,
@@ -196,7 +202,7 @@ def main(usr_args):
         policy.ema_net.eval()
     else:
         policy.net.eval()
-    policy = RoboTwinPolicy(policy, preprocessor, obs_horizon, chunk_size, save_path, record_video=False)
+    policy = RoboTwinPolicy(policy, preprocessor, obs_horizon, chunk_size, save_path, record_video=True)
 
     st_seed, suc_num = test_policy(task, args, policy, st_seed, test_num=test_num)
 

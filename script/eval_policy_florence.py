@@ -90,13 +90,13 @@ def main(usr_args):
     from mimictest.Nets.FlorencePi0Net import FlorencePi0Net
 
     # Saving path
-    save_path = Path('/root/autodl-tmp/RoboTwin/policy/mimictest/mimictest/Scripts/RoboTwinExperiments/Save')
+    save_path = Path('/home/lizhuoheng/RoboTwin/policy/mimictest/mimictest/Scripts/RoboTwinExperiments/Save')
     save_path.mkdir(parents=True, exist_ok=True)
-    load_batch_id = 29000
+    load_batch_id = 2900
 
     # Dataset
-    folder_name = 'lmdb_ds'
-    dataset_path = Path('/root/autodl-tmp/RoboTwin/data') / folder_name
+    folder_name = 'lmdb_50ep_blockhammerbeat'
+    dataset_path = Path('/home/lizhuoheng/RoboTwin/data') / folder_name
 
     # Space
     num_actions = 14
@@ -110,6 +110,7 @@ def main(usr_args):
             'max': torch.tensor(1.0),
             'min': torch.tensor(0.0),
         },
+        'coord': {},
         'low_dim': {
             'max': None, # to be filled
             'min': None,
