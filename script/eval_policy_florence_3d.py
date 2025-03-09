@@ -92,7 +92,7 @@ def main(usr_args):
     # Saving path
     save_path = Path('/home/lizhuoheng/RoboTwin/policy/mimictest/mimictest/Scripts/RoboTwinExperiments/Save') 
     save_path.mkdir(parents=True, exist_ok=True)
-    load_batch_id = 23000
+    load_batch_id = 7000
 
     # Dataset
     folder_name = 'lmdb_blockhammerbeat_50ep'
@@ -105,16 +105,14 @@ def main(usr_args):
     chunk_size = 8
     process_configs = {
         'rgb': {
-            'rgb_shape': (320, 320), # Initial resolution is (180, 320)
-            'crop_shape': (280, 280), # TODO: Debug
+            'img_shape': (320, 320), # Initial resolution is (180, 320)
+            'crop_shape': (280, 280),
             'max': torch.tensor(1.0),
             'min': torch.tensor(0.0),
         },
         'coord': {
-            'rgb_shape': (320, 320), 
-            'crop_shape': (280, 280), # TODO: Debug
-            'max': torch.tensor([0.8958, 0.4029, 1.2061]).view(3, 1, 1),
-            'min': torch.tensor([-0.6189, -0.3736,  0.3634]).view(3, 1, 1),
+            'img_shape': (320, 320), 
+            'crop_shape': (280, 280),
         },
         'low_dim': {
             'max': None, # to be filled
@@ -137,6 +135,7 @@ def main(usr_args):
 
     # Network
     model_path = Path("microsoft/Florence-2-base")
+    pos_reso_3d = 8 
     freeze_vision_tower = True
     freeze_florence = False
     do_compile = False
@@ -176,6 +175,7 @@ def main(usr_args):
     )
     net = Florence3DPi0Net(
         path=model_path,
+        pos_reso_3d=pos_reso_3d,
         freeze_vision_tower=freeze_vision_tower,
         num_actions=num_actions,
         lowdim_obs_dim=lowdim_obs_dim,
@@ -202,7 +202,7 @@ def main(usr_args):
         policy.ema_net.eval()
     else:
         policy.net.eval()
-    policy = RoboTwinPolicy(policy, preprocessor, obs_horizon, chunk_size, save_path, record_video=True)
+    policy = RoboTwinPolicy(policy, preprocessor, obs_horizon, chunk_size, save_path, record_video=False)
 
     st_seed, suc_num = test_policy(task, args, policy, st_seed, test_num=test_num)
 
